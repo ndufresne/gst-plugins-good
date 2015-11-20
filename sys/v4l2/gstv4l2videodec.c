@@ -447,6 +447,7 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
 {
   GstV4l2VideoDec *self = GST_V4L2_VIDEO_DEC (decoder);
   GstFlowReturn ret = GST_FLOW_OK;
+  gboolean input_sent = FALSE;
 
   GST_DEBUG_OBJECT (self, "Handling frame %d", frame->system_frame_number);
 
@@ -474,11 +475,9 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
      * we need to send something, otherwise the decoder will refuse to
      * intialize.
      */
-    if (codec_data) {
-      gst_buffer_ref (codec_data);
-    } else {
+    if (!codec_data) {
       codec_data = frame->input_buffer;
-      frame->input_buffer = NULL;
+      input_sent = TRUE;
     }
 
     /* Ensure input internal pool is active */
@@ -500,8 +499,6 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
         gst_v4l2_buffer_pool_process (GST_V4L2_BUFFER_POOL (self->
             v4l2output->pool), &codec_data);
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
-
-    gst_buffer_unref (codec_data);
 
     if (!gst_v4l2_object_acquire_format (self->v4l2capture, &info))
       goto not_negotiated;
@@ -546,7 +543,7 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
       goto start_task_failed;
   }
 
-  if (frame->input_buffer) {
+  if (!input_sent) {
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
     ret =
         gst_v4l2_buffer_pool_process (GST_V4L2_BUFFER_POOL (self->v4l2output->
@@ -560,9 +557,6 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
     } else if (ret != GST_FLOW_OK) {
       goto process_failed;
     }
-
-    /* No need to keep input arround */
-    gst_buffer_replace (&frame->input_buffer, NULL);
   }
 
   gst_video_codec_frame_unref (frame);
