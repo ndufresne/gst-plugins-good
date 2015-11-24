@@ -3329,6 +3329,12 @@ gst_v4l2_object_acquire_format (GstV4l2Object * v4l2object, GstVideoInfo * info)
   gst_video_info_init (info);
   gst_video_alignment_reset (&align);
 
+  /* Try to get BGR32 */
+  memset (&fmt, 0x00, sizeof (struct v4l2_format));
+  fmt.type = v4l2object->type;
+  fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_BGR32;
+  v4l2_ioctl (v4l2object->video_fd, VIDIOC_S_FMT, &fmt);
+
   memset (&fmt, 0x00, sizeof (struct v4l2_format));
   fmt.type = v4l2object->type;
   if (v4l2_ioctl (v4l2object->video_fd, VIDIOC_G_FMT, &fmt) < 0)
