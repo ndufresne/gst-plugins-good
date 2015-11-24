@@ -500,8 +500,10 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
             v4l2output->pool), &codec_data);
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
 
-    if (!gst_v4l2_object_acquire_format (self->v4l2capture, &info))
-      goto not_negotiated;
+    if (!gst_v4l2_object_acquire_format (self->v4l2capture, &info)) {
+      gst_video_codec_frame_unref (frame);
+      return ret;
+    }
 
     output_state = gst_video_decoder_set_output_state (decoder,
         info.finfo->format, info.width, info.height, self->input_state);
