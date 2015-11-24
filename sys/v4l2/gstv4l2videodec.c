@@ -109,6 +109,13 @@ gst_v4l2_video_dec_get_property (GObject * object,
   }
 }
 
+static void
+gst_v4l2_video_dec_constructed (GObject * object)
+{
+  /* Default capture to DMABUF */
+  g_object_set (object, "capture-io-mode", GST_V4L2_IO_DMABUF, NULL);
+}
+
 static gboolean
 gst_v4l2_video_dec_open (GstVideoDecoder * decoder)
 {
@@ -806,6 +813,8 @@ gst_v4l2_video_dec_class_init (GstV4l2VideoDecClass * klass)
       GST_DEBUG_FUNCPTR (gst_v4l2_video_dec_set_property);
   gobject_class->get_property =
       GST_DEBUG_FUNCPTR (gst_v4l2_video_dec_get_property);
+  gobject_class->constructed =
+      GST_DEBUG_FUNCPTR (gst_v4l2_video_dec_constructed);
 
   video_decoder_class->open = GST_DEBUG_FUNCPTR (gst_v4l2_video_dec_open);
   video_decoder_class->close = GST_DEBUG_FUNCPTR (gst_v4l2_video_dec_close);
